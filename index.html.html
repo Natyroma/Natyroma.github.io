@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .title {
+            color: white;
+            font-size: 2em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .timer-container {
+            background: linear-gradient(45deg, #D2691E, #8B4513);
+            padding: 20px;
+            border-radius: 15px;
+            width: 300px;
+            text-align: center;
+            font-family: 'Arial', sans-serif;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Resto de tus estilos... */
+
+.progress-ring__circle {
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+    transition: stroke-dashoffset 1s linear;
+    stroke: #FFA500;
+    stroke-width: 8;
+    fill: transparent;
+}
+
+
+        @keyframes colorChange {
+            0% { color: #FF0000; }
+            25% { color: #FFA500; }
+            50% { color: #FFFF00; }
+            75% { color: #00FF00; }
+            100% { color: #FF0000; }
+        }
+
+        .time-up {
+            animation: colorChange 1s infinite;
+        }
+
+        .final-message {
+            display: none;
+            color: white;
+            font-size: 1.5em;
+            margin-top: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="timer-container" id="container">
+        <h1 class="title">Temporizador</h1>
+        <audio id="alarmSound">
+            <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg">
+        </audio>
+        <div>
+            <input type="number" class="input-time" id="minutes" placeholder="Min" min="0">
+            <input type="number" class="input-time" id="seconds" placeholder="Seg" min="0" max="59">
+        </div>
+        <div class="progress-ring">
+            <svg width="200" height="200">
+                <circle class="progress-ring__circle" r="90" cx="100" cy="100" stroke-dasharray="565.48" stroke-dashoffset="0"/>
+            </svg>
+            <div id="timer">00:00</div>
+        </div>
+        <div class="final-message" id="finalMessage">¡Tiempo acabado!</div>
+        <button onclick="startTimer()">Iniciar</button>
+        <button onclick="stopTimer()">Detener</button>
+        <button onclick="resetTimer()">Reiniciar</button>
+    </div>
+
+    <script>
+        let totalSeconds = 0;
+        let initialSeconds = 0;
+        let interval = null;
+        const circle = document.querySelector('.progress-ring__circle');
+        const circumference = 2 * Math.PI * 90;
+
+        circle.style.strokeDasharray = `${circumference} ${circumference}`;
+        circle.style.strokeDashoffset = circumference;
+
+       function setProgress(percent) {
+    const offset = circumference * (1 - percent / 100);
+    circle.style.strokeDashoffset = offset;
+}
+
+        function startTimer() {
+            if (interval) return;
+            
+            const minutes = parseInt(document.getElementById('minutes').value) || 0;
+            const seconds = parseInt(document.getElementById('seconds').value) || 0;
+            totalSeconds = minutes * 60 + seconds;
+            initialSeconds = totalSeconds;
+            
+            if (totalSeconds <= 0) return;
+            
+            interval = setInterval(function() {
+                if (totalSeconds <= 0) {
+                    stopTimer();
+                    return;
+                }
+                
+                totalSeconds--;
+                const mins = Math.floor(totalSeconds / 60);
+                const secs = totalSeconds % 60;
+                
+                document.getElementById("timer").innerHTML = 
+                    `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                    
+                const percent = (totalSeconds / initialSeconds) * 100;
+                setProgress(percent);
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(interval);
+            interval = null;
+            if (totalSeconds <= 0) {
+                document.getElementById('timer').classList.add('time-up');
+                document.getElementById('finalMessage').style.display = 'block';
+                const alarm = document.getElementById('alarmSound');
+                alarm.volume = 1.0;
+                alarm.loop = true;
+                alarm.play();
+            }
+        }
+
+        function resetTimer() {
+            stopTimer();
+            document.getElementById('minutes').value = '';
+            document.getElementById('seconds').value = '';
+            document.getElementById("timer").innerHTML = "00:00";
+            setProgress(100);
+            document.getElementById('timer').classList.remove('time-up');
+            document.getElementById('finalMessage').style.display = 'none';
+            const alarm = document.getElementById('alarmSound');
+            alarm.pause();
+            alarm.currentTime = 0;
+        }
+    </script>
+</body>
+</html>
